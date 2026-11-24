@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pixel Art Normal Map Lab</title>
+<meta name="description" content="Generate normal maps for pixel art from the outline alone, with real-time 2D lighting.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Silkscreen&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 4 4' shape-rendering='crispEdges'%3E%3Crect width='4' height='4' fill='%238080ff'/%3E%3Crect width='2' height='2' fill='%23ffb480'/%3E%3Crect x='2' y='2' width='2' height='2' fill='%2380ffb4'/%3E%3C/svg%3E">
+</head>
+<body>
+<header class="top">
+  <div class="brand">
+    <div class="logo" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+    <div>
+      <h1>Pixel Art Normal Map Lab</h1>
+      <p data-i18n-html="subtitle"></p>
+    </div>
+  </div>
+  <nav class="actions">
+    <a href="https://www.spritecook.ai/blog/pixel-art-normal-maps-from-outline" target="_blank" rel="noopener" data-i18n="source"></a>
+    <a href="https://github.com/kumi0708/pixel-art-normal-map-lab" target="_blank" rel="noopener">GitHub</a>
+    <button id="lang" class="btn ghost">EN</button>
+  </nav>
+</header>
+
+<main class="layout">
+  <section class="panel stage-panel">
+    <div class="views" role="tablist">
+      <button class="on" data-view="lit" data-i18n="viewLit"></button>
+      <button data-view="albedo" data-i18n="viewAlbedo"></button>
+      <button data-view="normal" data-i18n="viewNormal"></button>
+      <button data-view="height" data-i18n="viewHeight"></button>
+      <button data-view="light" data-i18n="viewLight"></button>
+    </div>
+    <div class="stage"><canvas id="scene" width="224" height="140"></canvas></div>
+    <div class="stage-foot">
+      <p class="hint" data-i18n="hint"></p>
+      <div class="toggles">
+        <label><input type="checkbox" id="t-compare"><span data-i18n="compare"></span></label>
+        <label><input type="checkbox" id="t-flip"><span data-i18n="flipY"></span></label>
+        <label><input type="checkbox" id="t-slights"><span data-i18n="spriteLights"></span></label>
+        <label><input type="checkbox" id="t-anim"><span data-i18n="animate"></span></label>
+        <button id="clear-lights" class="btn ghost small" data-i18n="clearLights"></button>
+      </div>
+    </div>
+  </section>
+
+  <aside class="panel controls">
+    <h2 data-i18n="secSprite"></h2>
+    <div id="chips" class="chips"></div>
+    <div class="sel"><b id="sel-name"></b><small id="sel-size"></small></div>
+
+    <h2 data-i18n="secGen"></h2>
+    <label class="sl"><span data-i18n="bevel"></span><output></output><input id="p-bevel" type="range" min="0.5" max="12" step="0.1"></label>
+    <label class="sl"><span data-i18n="top"></span><output></output><input id="p-top" type="range" min="0" max="30" step="0.1"></label>
+    <label class="sl"><span data-i18n="detail"></span><output></output><input id="p-detail" type="range" min="0" max="6" step="0.1"></label>
+    <label class="sl"><span data-i18n="sigma"></span><output></output><input id="p-sigma" type="range" min="0" max="2" step="0.05"></label>
+    <div class="row">
+      <button id="boxy" class="btn small" data-i18n="boxy"></button>
+      <button id="reset" class="btn ghost small" data-i18n="reset"></button>
+    </div>
+
+    <h2 data-i18n="secLight"></h2>
+    <label class="sl"><span data-i18n="steps"></span><output></output><input id="g-steps" type="range" min="0" max="12" step="1"></label>
+    <label class="sl"><span data-i18n="lheight"></span><output></output><input id="g-z" type="range" min="2" max="80" step="1"></label>
+    <label class="sl"><span data-i18n="radius"></span><output></output><input id="g-radius" type="range" min="20" max="200" step="1"></label>
+    <label class="sl"><span data-i18n="energy"></span><output></output><input id="g-energy" type="range" min="0" max="3" step="0.05"></label>
+    <div class="row colors">
+      <label><input type="color" id="g-color"><span data-i18n="lcolor"></span></label>
+      <label><input type="color" id="g-ambient"><span data-i18n="ambient"></span></label>
+    </div>
+
+    <h2 data-i18n="secFile"></h2>
+    <label class="btn file"><input type="file" id="upload" accept="image/png,image/gif,image/webp"><span data-i18n="upload"></span></label>
+    <p class="note" data-i18n="uploadNote"></p>
+    <div class="row">
+      <button id="dl-normal" class="btn small" data-i18n="downloadN"></button>
+      <button id="dl-height" class="btn ghost small" data-i18n="downloadH"></button>
+    </div>
+  </aside>
+
+  <section class="panel inspector">
+    <h2 data-i18n="secInspector"></h2>
+    <div class="steps">
+      <figure><canvas id="i-albedo"></canvas><figcaption data-i18n="st1"></figcaption></figure>
+      <span class="arrow">›</span>
+      <figure><canvas id="i-dist"></canvas><figcaption data-i18n="st2"></figcaption></figure>
+      <span class="arrow">›</span>
+      <figure><canvas id="i-height"></canvas><figcaption data-i18n="st3"></figcaption></figure>
+      <span class="arrow">›</span>
+      <figure><canvas id="i-normal"></canvas><figcaption data-i18n="st4"></figcaption></figure>
+      <span class="arrow">›</span>
+      <figure><canvas id="i-lit"></canvas><figcaption data-i18n="st5"></figcaption></figure>
+    </div>
+    <div id="readout" class="readout"></div>
+  </section>
+
+  <section class="panel how-panel">
+    <h2 data-i18n="secHow"></h2>
+    <div data-i18n-html="how"></div>
+  </section>
+</main>
+<footer class="foot"><p data-i18n="footer"></p></footer>
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
