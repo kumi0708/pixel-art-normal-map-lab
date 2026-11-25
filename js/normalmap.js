@@ -58,9 +58,10 @@ function edt1d(f, n, d, v, z) {
 
 // Exact Euclidean distance from every inside pixel to the nearest outside pixel.
 // The mask is padded by one transparent pixel so the canvas border counts as an edge.
-export function distanceTransform(mask, w, h) {
+// pad = false reproduces the "sprite touches the canvas edge" bug (border is not an edge).
+export function distanceTransform(mask, w, h, pad = true) {
   const W = w + 2, H = h + 2;
-  const g = new Float64Array(W * H); // padding = 0 (outside)
+  const g = new Float64Array(W * H).fill(pad ? 0 : INF); // padding = outside (or not, when pad=false)
   for (let y = 0; y < h; y++) {
     for (let x = 0; x < w; x++) g[(y + 1) * W + x + 1] = mask[y * w + x] ? INF : 0;
   }
@@ -147,9 +148,9 @@ export function gradient(hgt, w, h) {
  *   normalRGBA: encoded PNG-ready bytes, flat = (128,128,255)
  */
 export function computeMaps(rgba, w, h, opts = {}) {
-  const o = { ...SPRITE_DEFAULTS, threshold: ALPHA_THRESHOLD, ...opts };
+  const o = { ...SPRITE_DEFAULTS, threshold: ALPHA_THRESHOLD, pad: true, ...opts };
   const inside = insideMask(rgba, w, h, o.threshold);
-  const dist = distanceTransform(inside, w, h);
+  const dist = distanceTransform(inside, w, h, o.pad);
   const L = luminance(rgba, w, h);
 
   let sum = 0, cnt = 0;
@@ -181,7 +182,7 @@ export function computeMaps(rgba, w, h, opts = {}) {
     normalRGBA[i * 4 + 2] = Math.round((nz * 0.5 + 0.5) * 255);
     normalRGBA[i * 4 + 3] = 255;
   }
-  return { w, h, inside, dist, ratio, rawHeight, height, normal, normalRGBA, meanLum, params: o };
+  return { w, h, inside, dist, ratio, rawHeight, height, gx, gy, normal, normalRGBA, meanLum, params: o };
 }
 
 // numpy.percentile with linear interpolation
